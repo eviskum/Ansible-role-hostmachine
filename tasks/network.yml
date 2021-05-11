@@ -1,0 +1,39 @@
+---
+
+- name: Load kernel module 8021q at boot
+  lineinfile:
+    path: /etc/modules
+    regexp: '^8021q";'
+    insertafter: EOF
+    line: '8021q";'
+    state: present
+
+- name: Load kernel module 8021q online
+  modprobe:
+    name: 8021q
+    state: present
+
+- name: Install VLAN package
+  apt:
+    name: vlan
+    state: present
+
+- name: Set-up /etc/network/interfaces config file
+  template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Start VLAN interfaces
+  command: bash -c "ifup {{ host_lanint}}.{{ item.vlan_no}}"
+  with_items: "{{ scopes }}"
+
+- name: Set-up resolv.conf file
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644

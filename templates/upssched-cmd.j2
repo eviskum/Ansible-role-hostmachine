@@ -1,0 +1,54 @@
+#! /bin/sh
+#
+# This script should be called by upssched via the CMDSCRIPT directive.
+#
+# Here is a quick example to show how to handle a bunch of possible
+# timer names with the help of the case structure.
+#
+# This script may be replaced with another program without harm.
+#
+# The first argument passed to your CMDSCRIPT is the name of the timer
+# from your AT lines.
+
+case $1 in
+        onbatt)
+                logger -t upssched-cmd "The UPS is on battery"
+{% for vm in vms %}
+{% if vm.shutdownorder == 1 %}
+{% for vbhost in vm.vbhosts %}
+{% if vbhost == ansible_hostname %}
+                {{ vm.shutdowncmd }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+                sleep 100
+{% for vm in vms %}
+{% if vm.shutdownorder == 2 %}
+{% for vbhost in vm.vbhosts %}
+{% if vbhost == ansible_hostname %}
+                {{ vm.shutdowncmd }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+                ;;
+        online)
+                logger -t upssched-cmd "The UPS is back on power"
+                ;;
+        commbad)
+                logger -t upssched-cmd "The server lost communication with UPS"
+                ;;
+        commok)
+                logger -t upssched-cmd "The server re-establish communication with UPS"
+                ;;
+        powerdown)
+                logger -t upssched-cmd "The UPS is shutting down the system"
+                ;;
+        replacebatt)
+                logger -t upssched-cmd "The UPS needs new battery"
+                ;;
+        *)
+                logger -t upssched-cmd "Unrecognized command: $1"
+                ;;
+esac

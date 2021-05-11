@@ -1,0 +1,10 @@
+---
+
+- name: Remove Network Manager
+  apt:
+    name:
+      - network-manager
+      - network-manager-gnome
+    state: absent
+    autoremove: yes
+    purge: yes

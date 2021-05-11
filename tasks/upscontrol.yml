@@ -1,0 +1,65 @@
+---
+
+- name: Load UPS variables
+  include_vars: "upscontrol.yml"
+
+- name: install nut client
+  apt:
+    name: "{{nut_client_package}}"
+    state: present
+    update_cache: yes
+
+- name: configure upsmon.conf
+  template:
+    src: upsmon.conf.j2
+    dest: "{{nut_config_path}}/upsmon.conf"
+    owner: root
+    group: "{{nut_user}}"
+    mode: 0640
+  register: upsmon_result
+
+- name: configure nut.conf
+  template:
+    src: nut.conf.j2
+    dest: "{{nut_config_path}}/nut.conf"
+    owner: root
+    group: "{{nut_user}}"
+    mode: 0640
+  register: nut_conf_result
+
+- name: configure upssched.conf
+  template:
+    src: upssched.conf.j2
+    dest: "{{nut_config_path}}/upssched.conf"
+    owner: root
+    group: "{{nut_user}}"
+    mode: 0640
+  register: upssched_conf_result
+
+- name: create upssched pipe and lock directory
+  file:
+    path: "{{ nut_pipedir }}"
+    owner: "{{ nut_user }}"
+    group: "{{ nut_user }}"
+    state: directory
+    mode: 0755
+
+- name: create upssched-cmd file
+  template:
+    src: upssched-cmd.j2
+    dest: "{{nut_upsschedcmd_path}}/upssched-cmd"
+    owner: root
+    group: "{{nut_user}}"
+    mode: 0655
+  register: upssched_cmd_result
+
+- name: restart nut-monitor
+  service:
+    name: "{{nut_client_service}}"
+    state: restarted
+
+- name: ensure nut-monitor started
+  service:
+    name: "{{nut_client_service}}"
+    state: started
+    enabled: yes

@@ -1,0 +1,30 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+auto {{ host_lanint }}
+iface {{ host_lanint }} inet static
+  address {{ host_ipaddr }}
+  netmask {{ host_netmask }}
+  network {{ host_network }}
+  gateway {{ host_gateway }}
+  broadcast {{ host_broadcast }}
+
+{% if host_wlanint is defined %}
+auto {{ host_wlanint }}
+iface {{ host_wlanint }} inet manual
+  wpa-ssid {{ host_wlan_ssid}}
+  wpa-psk {{ host_wlan_key }}
+{% endif %}
+
+{% for scope in scopes %}
+auto {{ host_lanint }}.{{ scope.vlan_no }}
+iface {{ host_lanint }}.{{ scope.vlan_no }} inet manual
+  vlan-raw-device {{ host_lanint }}
+
+{% endfor %}

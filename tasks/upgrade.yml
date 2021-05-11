@@ -1,0 +1,69 @@
+---
+
+- name: Update Debian package cache
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+
+- name: Upgrade Debiand packages
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+
+- name: Check if a reboot is needed for Debian and Ubuntu boxes
+  register: reboot_required_file
+  stat: path=/var/run/reboot-required get_md5=no
+
+# - name: Reboot the Debian server
+#       reboot:
+#         msg: "Reboot initiated by Ansible due to kernel updates"
+#         connect_timeout: 5
+#         reboot_timeout: 300
+#         pre_reboot_delay: 0
+#         post_reboot_delay: 30
+#         test_command: uptime
+#       when: reboot_required_file.stat.exists
+
+- name: Determine the virtualbox host version
+  shell: "VBoxManage --version | awk -F'[r_]' '{print $1}'"
+  register: host_vbox_version2
+
+- name: Check if virtualbox_version could be determined
+  fail:
+    msg: "Could not determine virtualbox_version"
+  when: not host_vbox_version2.stdout
+
+- name: Set virtualbox_version
+  set_fact:
+    virtualbox_version2: "{{ host_vbox_version2.stdout }}"
+
+- name: Determine the virtualbox extension version
+  shell: "VBoxManage list extpacks | grep Version | awk '{print $2}'"
+  register: host_vboxext_version2
+
+- name: Check if virtualbox extension version could be determined
+  fail:
+    msg: "Could not determine virtualbox extension version"
+  when: not host_vboxext_version2.stdout
+
+- name: Set virtualbox_ext_version
+  set_fact:
+    virtualbox_ext_version2: "{{ host_vboxext_version2.stdout }}"
+
+- name: Download new VirtualBox extension pack
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_version2 }}/Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_version2 }}.vbox-extpack"
+    dest: /tmp/
+    force: yes
+  register: download_result
+  when: 'virtualbox_version2 != virtualbox_ext_version2'
+
+- name: Output downloaded new VirtualBox extension pack file name
+  debug:
+    var: download_result.dest
+    verbosity: 1
+
+- name: Install new VirtualBox extension pack
+  shell: "echo 'y' | VBoxManage extpack install --replace {{ download_result.dest }}"
+  when: 'virtualbox_version2 != virtualbox_ext_version2'

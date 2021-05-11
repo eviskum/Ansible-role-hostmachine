@@ -1,0 +1,9 @@
+---
+
+nut_client_package: nut-client
+nut_client_service: nut-client
+nut_config_path: /etc/nut
+nut_upsschedcmd_path: /usr/bin
+nut_user: viskum
+nut_pipedir: /var/lib/nut/upssched
+#nut_user: nut

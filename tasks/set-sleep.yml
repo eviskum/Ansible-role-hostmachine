@@ -1,0 +1,27 @@
+---
+
+- name: Set lid close handling
+  block:
+    - name: Set lid switch parm 1
+      lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^HandleLidSwitch='
+        insertafter: '^#HandleLidSwitch='
+        line: 'HandleLidSwitch=ignore'
+    - name: Set lid switch parm 2
+      lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^HandleLidSwitchExternalPower='
+        insertafter: '^#HandleLidSwitchExternalPower'
+        line: 'HandleLidSwitchExternalPower=ignore'
+    - name: Set lid switch parm 3
+      lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^HandleLidSwitchDocked='
+        insertafter: '^#HandleLidSwitchDocked='
+        line: 'HandleLidSwitchDocked=ignore'
+
+- name: Restart systemd-logind service
+  service:
+    name: systemd-logind
+    state: restarted

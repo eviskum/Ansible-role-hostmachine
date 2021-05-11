@@ -1,0 +1,15 @@
+---
+
+- name: Set-up public key for key based SSH logins.
+  authorized_key:
+    user: viskum
+    state: present
+    key: "{{ lookup('file', '/home/viskum/ansible/ssh_keys/id_mac_rsa.pub') }}"
+
+- name: Harden sshd_config
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0644

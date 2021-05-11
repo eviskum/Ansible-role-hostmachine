@@ -1,0 +1,50 @@
+---
+
+- name: Configure the Virtualbox APT key
+  apt_key:
+    url: https://www.virtualbox.org/download/oracle_vbox_2016.asc
+    state: present
+
+- name: Set-up Virtualbox REPO
+  apt_repository:
+    repo: deb http://download.virtualbox.org/virtualbox/debian buster contrib
+    state: present
+
+- name: Install virtualbox
+  apt:
+    pkg: virtualbox-6.1
+    state: present
+
+- name: Determine the host version
+  shell: "VBoxManage --version | awk -F'[r_]' '{print $1}'"
+  register: host_vbox_version
+
+- name: Check if virtualbox_version could be determined
+  fail:
+    msg: "Could not determine virtualbox_version - please specify this variable"
+  when: not host_vbox_version.stdout
+
+- name: Set virtualbox_version
+  set_fact:
+    virtualbox_version: "{{ host_vbox_version.stdout }}"
+
+- name: Check if extension pack is already installed
+  shell: "VBoxManage list extpacks"
+  register: extpack_list
+
+- name: Download VirtualBox extension pack
+  get_url:
+    url: "https://download.virtualbox.org/virtualbox/{{ virtualbox_version }}/Oracle_VM_VirtualBox_Extension_Pack-{{ virtualbox_version }}.vbox-extpack"
+    dest: /tmp/
+    force: yes
+  register: download_result
+  when: 'extpack_list.stdout == "Extension Packs: 0"'
+
+- name: Output downloaded VirtualBox extension pack file name
+  debug:
+    var: download_result.dest
+    verbosity: 1
+
+- name: Install VirtualBox extension pack
+  shell: "echo 'y' | VBoxManage extpack install --replace {{ download_result.dest }}"
+  when: 'extpack_list.stdout == "Extension Packs: 0"'

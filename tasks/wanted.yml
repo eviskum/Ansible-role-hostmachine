@@ -1,0 +1,8 @@
+---
+
+- name: Install dirmngr package
+  apt:
+    name:
+      - dirmngr
+    state: present
+    update_cache: yes

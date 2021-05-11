@@ -1,0 +1,87 @@
+---
+
+# Vagrant package informations
+vagrant_package_version: '2.2.10'
+vagrant_package_state: 'present'
+vagrant_package_filename: "{{ 'vagrant_' ~ vagrant_package_version
+  ~ '.' ~ vagrant_package_extension }}"
+
+# Vagrant URLs informations
+vagrant_url_download: "{{ 'https://releases.hashicorp.com/vagrant/'
+  ~ vagrant_package_version }}"
+vagrant_url_checksum: "{{ vagrant_url_download ~ '/vagrant_'
+  ~ vagrant_package_version ~ '_SHA256SUMS' }}"
+
+# Vagrant plugins
+vagrant_plugins_user: "viskum"
+vagrant_plugins:
+  - name: 'vagrant-timezone'
+    state: 'present'
+  - name: 'vagrant-vbguest'
+    state: 'present'
+  - name: 'vagrant-digitalocean'
+    state: 'present'
+
+
+
+nut_nut_conf:
+  MODE: netclient
+  UPSD_OPTIONS:
+  UPSMON_OPTIONS:
+  POWEROFF_WAIT:
+
+nut_upsmon_conf:
+  DEADTIME: 15
+  FINALDELAY: 60
+  HOSTSYNC: 15
+  MINSUPPLIES: 1
+  MONITOR:
+    - "ups@192.168.200.20 1 monuser secret slave"
+  NOCOMMWARNTIME: 300
+  NOTIFYCMD: /usr/sbin/upssched
+  NOTIFYMSG:
+    - "ONLINE \"UPS %s on line power\""
+    - "ONBATT \"UPS %s on battery\""
+    - "LOWBATT \"UPS %s battery is low\""
+    - "FSD \"UPS %s: forced shutdown in progress\""
+    - "COMMOK \"Communications with UPS %s established\""
+    - "COMMBAD \"Communications with UPS %s lost\""
+    - "SHUTDOWN \"Auto logout and shutdown proceeding\""
+    - "REPLBATT \"UPS %s battery needs to be replaced\""
+    - "NOCOMM \"UPS %s is unavailable\""
+    - "NOPARENT \"upsmon parent process died - shutdown impossible\""
+  NOTIFYFLAG:
+    - "ONLINE SYSLOG+WALL+EXEC"
+    - "ONBATT SYSLOG+WALL+EXEC"
+    - "LOWBATT SYSLOG+WALL+EXEC"
+    - "FSD SYSLOG+WALL+EXEC"
+    - "COMMOK SYSLOG+WALL+EXEC"
+    - "COMMBAD SYSLOG+WALL+EXEC"
+    - "SHUTDOWN SYSLOG+WALL+EXEC"
+    - "REPLBATT SYSLOG+WALL+EXEC"
+    - "NOCOMM SYSLOG+WALL+EXEC"
+    - "NOPARENT SYSLOG+WALL"
+  POLLFREQ: 5
+  POLLFREQALERT: 5
+  POWERDOWNFLAG: /etc/killpower
+  RBWARNTIME: 43200
+  RUN_AS_USER: "{{nut_user}}"
+  SHUTDOWNCMD: '"/sbin/shutdown -h +0"'
+  CERTPATH:
+  CERTIDENT:
+  CERTHOST:
+  CERTVERIFY:
+  FORCESSL:
+
+nut_upssched_conf:
+  - "CMDSCRIPT /usr/bin/upssched-cmd"
+  - "PIPEFN {{ nut_pipedir }}/upssched.pipe"
+  - "LOCKFN {{ nut_pipedir }}/upssched.lock"
+  - "AT ONBATT * START-TIMER onbatt 300"
+  - "AT ONLINE * CANCEL-TIMER onbatt online"
+  - "AT LOWBATT * EXECUTE onbatt"
+  - "AT COMMBAD * START-TIMER commbad 30"
+  - "AT COMMOK * CANCEL-TIMER commbad commok"
+  - "AT NOCOMM * EXECUTE commbad"
+  - "AT SHUTDOWN * EXECUTE powerdown"
+  - "AT REPLBATT * EXECUTE replacebatt"

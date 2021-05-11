@@ -1,0 +1,83 @@
+---
+
+- name: Load Vagrant variables
+  include_vars: "vagrant.yml"
+
+- name: Get packages checksums
+  uri:
+    url: "{{ vagrant_url_checksum }}"
+    return_content: True
+  changed_when: False
+  register: vagrant_packages_checksums
+
+- name: Extract package checksum
+  command: "echo {{ (item.split(' '))[0] }}"
+  register: vagrant_package_checksum
+  changed_when: False
+  with_items: "{{ vagrant_packages_checksums.content.split('\n') }}"
+  when: vagrant_package_filename in item
+
+- name: Get vagrant version if installed
+  command: 'vagrant --version'
+  register: vagrant_installed_version
+  changed_when: False
+  ignore_errors: True
+
+- name: Download Vagrant package
+  get_url:
+    url: "{{ vagrant_url_download ~ '/' ~ vagrant_package_filename }}"
+    dest: '/tmp/'
+    checksum: "sha256:{{ item.stdout }}"
+  register: vagrant_download_package
+  with_items: "{{ vagrant_package_checksum.results }}"
+  when:
+    - vagrant_installed_version.failed or (vagrant_installed_version.stdout.split(' ')[1] != vagrant_package_version)
+    - item.stdout is defined
+
+- name: Install Vagrant package
+  apt:
+    deb: "/tmp/{{ vagrant_package_filename }}"
+    state: "{{ vagrant_package_state }}"
+  when:
+    - vagrant_download_package.changed
+    - vagrant_package_state == 'present'
+
+- name: Uninstall Vagrant package
+  apt:
+    name: vagrant
+    state: absent
+  when:
+    - vagrant_package_state == 'absent'
+
+- name: Delete package file
+  file:
+    dest: "/tmp/{{ vagrant_package_filename }}"
+    state: 'absent'
+
+- name: List installed Vagrant plugins
+  become: true
+  become_user: "{{ vagrant_plugins_user }}"
+  shell: 'vagrant plugin list'
+  changed_when: False
+  register: vagrant_initial_plugins_list
+  when: vagrant_package_state == 'present'
+
+- name: Install Vagrant plugins
+  become: true
+  become_user: "{{ vagrant_plugins_user }}"
+  shell: "vagrant plugin install {{ item.name }}"
+  with_items: "{{ vagrant_plugins }}"
+  when:
+    - vagrant_package_state == 'present'
+    - item.state == 'present'
+    - item.name not in vagrant_initial_plugins_list.stdout
+
+- name: Uninstall Vagrant plugins
+  become: true
+  become_user: "{{ vagrant_plugins_user }}"
+  shell: "vagrant plugin uninstall {{ item.name }}"
+  with_items: "{{ vagrant_plugins }}"
+  when:
+    - vagrant_package_state == 'present'
+    - item.state == 'absent'
+    - item.name in vagrant_initial_plugins_list.stdout

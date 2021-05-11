@@ -1,0 +1,51 @@
+---
+
+- name: Remove unwanted packages
+  include: "unwanted.yml"
+  tags:
+    - install
+
+- name: Install wanted packages
+  include: "wanted.yml"
+  tags:
+    - install
+
+- name: Set-up network
+  include: "network.yml"
+  tags:
+    - install
+    - network
+
+- name: Set-up SSH (key + diable password SSH)
+  include: "setupssh.yml"
+  tags:
+    - install
+
+- name: Install virtualbox
+  include: "virtualbox.yml"
+  tags:
+    - install
+    - virtualbox
+
+- name: Install vagrant
+  include: "vagrant.yml"
+  tags:
+    - install
+    - vagrant
+
+- name: Set-up UPS control
+  include: "upscontrol.yml"
+  tags:
+    - install
+    - upscontrol
+
+- name: Set sleep (close lid) parameters
+  include: "set-sleep.yml"
+  tags:
+    - install
+
+- name: Upgrade installation
+  include: "upgrade.yml"
+  tags:
+    - install
+    - upgrade
