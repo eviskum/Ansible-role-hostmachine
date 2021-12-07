@@ -7,7 +7,7 @@
 
 - name: Set-up Virtualbox REPO
   apt_repository:
-    repo: deb http://download.virtualbox.org/virtualbox/debian buster contrib
+    repo: "deb http://download.virtualbox.org/virtualbox/debian {{ ansible_distribution_release }} contrib"
     state: present
 
 - name: Install virtualbox
